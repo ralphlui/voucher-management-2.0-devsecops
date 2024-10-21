@@ -1,0 +1,36 @@
+# Stage 1: Build the application
+FROM node:18-alpine AS builder
+
+# Set the working directory in the builder stage
+WORKDIR /app
+
+# Copy package.json and package-lock.json (or yarn.lock) into the builder container
+COPY package*.json ./
+
+# Install dependencies
+RUN npm install
+
+# Copy the rest of the application code into the builder container
+COPY . .
+
+# Build the application for web using Expo
+RUN npx expo export
+
+# Stage 2: Serve the application
+FROM node:18-alpine AS runner
+
+# Set the working directory in the runner stage
+WORKDIR /app
+
+# Copy the build output from the builder stage
+COPY --from=builder /app/dist ./dist
+
+# Install serve globally
+RUN npm install -g serve
+
+# Expose the port the app runs on
+EXPOSE 5000
+
+# Command to run the application
+CMD ["serve", "-s", "web-build"]
+

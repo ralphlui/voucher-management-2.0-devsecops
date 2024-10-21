@@ -1,0 +1,52 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  namespace: voucher-management-app
+  name: ingress-voucher-backend
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internal
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80}]'
+    alb.ingress.kubernetes.io/target-group-attributes: stickiness.enabled=true,stickiness.lb_cookie.duration_seconds=172800
+    alb.ingress.kubernetes.io/idle-timeout: '3600'
+spec:
+  ingressClassName: alb
+  rules:
+    - http:
+        paths:
+        - path: /api/core
+          pathType: Prefix
+          backend:
+            service:
+              name: core-k8s-service
+              port:
+                number: 8081
+        - path: /api/feeds
+          pathType: Prefix
+          backend:
+            service:
+              name: feed-k8s-service
+              port:
+                number: 8082
+        - path: /ws/liveFeeds
+          pathType: Prefix
+          backend:
+            service:
+              name: feed-k8s-service
+              port:
+                number: 8082
+        - path: /api/audit
+          pathType: Prefix
+          backend:
+            service:
+              name: audit-k8s-service
+              port:
+                number: 8084
+        - path: /api/users
+          pathType: Prefix
+          backend:
+            service:
+              name: auth-k8s-service
+              port:
+                number: 8083
+

@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: voucher-app-feed
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: voucher-app-feed
+  template:
+    metadata:
+      labels:
+        app: voucher-app-feed
+    spec:
+      containers:
+        - name: voucher-app-feed
+          image: public.ecr.aws/s6y5a7e8/voucher-app-feed:VERSION
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8082
+          env:
+            - name: AWS_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: my-secret
+                  key: aws_s3_access_key_id 
+            - name: AWS_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: my-secret
+                  key: aws_s3_secret_key_id
+            - name: SPRING_PROFILES_ACTIVE
+              valueFrom:
+                configMapKeyRef:
+                  name: my-configmap
+                  key: SPRING_PROFILES_ACTIVE
+            - name: FRONTEND_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: my-configmap
+                  key: FRONTEND_URL
+            - name: AUTH_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: my-configmap
+                  key: AUTH_URL
+            - name: AUDIT_SQS_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: my-configmap
+                  key: AUDIT_SQS_URL
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: FEED_SQS_QUEUE_NAME
+              value: "$(POD_NAME)"
+          resources:
+           requests:
+             cpu: "50m"
+             memory: "200Mi"
+           limits:
+             cpu: "300m"
+             memory: "400Mi"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: feed-k8s-service
+spec:
+  selector:
+    app: voucher-app-feed
+  ports:
+    - protocol: TCP
+      port: 8082
+      targetPort: 8082
+  type: NodePort

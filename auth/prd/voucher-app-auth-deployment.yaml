@@ -1,0 +1,84 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: voucher-app-auth
+  namespace: voucher-management-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: voucher-app-auth
+  template:
+    metadata:
+      labels:
+        app: voucher-app-auth
+    spec:
+      containers:
+        - name: voucher-app-auth
+          image: public.ecr.aws/s6y5a7e8/voucher-app-auth:VERSION
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8083
+          env:
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: my-secret
+                  key: db_username
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: my-secret
+                  key: db_password
+            - name: AWS_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: my-secret
+                  key: aws_s3_access_key_id
+            - name: AWS_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: my-secret
+                  key: aws_s3_secret_key_id
+            - name: SPRING_PROFILES_ACTIVE
+              valueFrom:
+                configMapKeyRef:
+                  name: my-configmap
+                  key: SPRING_PROFILES_ACTIVE
+            - name: AES_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: my-secret
+                  key: aes_secret
+            - name: FRONTEND_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: my-configmap
+                  key: FRONTEND_URL
+            - name: AWS_SQS_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: my-configmap
+                  key: AUDIT_SQS_URL
+          resources:
+           requests:
+             cpu: "50m"
+             memory: "200Mi"
+           limits:
+             cpu: "300m"
+             memory: "400Mi"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-k8s-service
+  namespace: voucher-management-app
+spec:
+  selector:
+    app: voucher-app-auth
+  ports:
+    - protocol: TCP
+      port: 8083
+      targetPort: 8083
+  type: NodePort

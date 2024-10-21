@@ -1,0 +1,84 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: voucher-app-audit
+  namespace: voucher-management-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: voucher-app-audit
+  template:
+    metadata:
+      labels:
+        app: voucher-app-audit
+    spec:
+      containers:
+        - name: voucher-app-audit
+          image: public.ecr.aws/s6y5a7e8/voucher-app-audit:VERSION
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8084
+          env:
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: my-secret
+                  key: db_username
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: my-secret
+                  key: db_password
+            - name: AWS_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: my-secret
+                  key: aws_s3_access_key_id
+            - name: AWS_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: my-secret
+                  key: aws_s3_secret_key_id
+            - name: SPRING_PROFILES_ACTIVE
+              valueFrom:
+                configMapKeyRef:
+                  name: my-configmap
+                  key: SPRING_PROFILES_ACTIVE
+            - name: AWS_REGION
+              valueFrom:
+                configMapKeyRef:
+                  name: my-configmap
+                  key: AWS_REGION
+            - name: SQS_QUEUE_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: my-configmap
+                  key: SQS_QUEUE_NAME
+            - name: SQS_QUEUE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: my-configmap
+                  key: AUDIT_SQS_URL
+          resources:
+           requests:
+             cpu: "50m"
+             memory: "200Mi"
+           limits:
+             cpu: "200m"
+             memory: "350Mi"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: audit-k8s-service
+  namespace: voucher-management-app
+spec:
+  selector:
+    app: voucher-app-audit
+  ports:
+    - protocol: TCP
+      port: 8084
+      targetPort: 8084
+  type: NodePort

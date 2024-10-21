@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: voucher-app-web
+  namespace: voucher-management-web
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: voucher-app-web
+  template:
+    metadata:
+      labels:
+        app: voucher-app-web
+    spec:
+      containers:
+        - name: voucher-management-web
+          image: public.ecr.aws/s6y5a7e8/voucher-app-web:VERSION
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "100Mi"
+            limits:
+              cpu: "200m"
+              memory: "350Mi"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-k8s-service
+  namespace: voucher-management-web
+spec:
+  selector:
+    app: voucher-app-web
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 3000
+  type: NodePort

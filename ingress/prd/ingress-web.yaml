@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  namespace: voucher-management-web
+  name: ingress-voucher
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTP":8080}]'
+    alb.ingress.kubernetes.io/target-group-attributes: stickiness.enabled=true,stickiness.lb_cookie.duration_seconds=172800
+    alb.ingress.kubernetes.io/idle-timeout: '3600'
+spec:
+  ingressClassName: alb
+  rules:
+    - host: demo.devplify.com
+    - http:
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: ingress-nginx-controller
+              port:
+                number: 80
